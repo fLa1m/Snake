@@ -7,7 +7,7 @@
 #define CONTROLS 3
 
 enum {LEFT=1, UP, RIGHT, DOWN, STOP_GAME=KEY_F(10)};
-enum {MAX_TAIL_SIZE=100, START_TAIL_SIZE=3, MAX_FOOD_SIZE=20, FOOD_EXPIRE_SECONDS=10};
+enum {MAX_TAIL_SIZE=100, START_TAIL_SIZE=3, MAX_FOOD_SIZE=20, FOOD_EXPIRE_SECONDS=10, SEED_NUMBER=5};
 
 typedef struct control_buttons
 {
@@ -32,6 +32,15 @@ typedef struct tail_t
     int x;
     int y;
 } tail_t;
+
+typedef struct food
+{
+    int x;
+    int y;
+    time_t put_time;
+    char point;
+    uint8_t enable;
+} food[MAX_FOOD_SIZE];
 
 struct control_buttons default_controls[CONTROLS] = {{KEY_DOWN, KEY_UP, KEY_LEFT, KEY_RIGHT},
                                                      {'S', 'W', 'A', 'D'},
@@ -61,6 +70,57 @@ void initSnake(snake_t *head, size_t size, int x, int y)
     head->tail = tail;
     head->tsize = size + 1;
     head->controls = default_controls;
+}
+
+void initFood(struct food f[], size_t size)
+{
+    struct food init = {0, 0, 0, 0, 0};
+    int max_y = 0, max_x = 0;
+    getmaxyx(stdscr, max_y, max_x);
+    for (size_t i = 0; i < size; i++)
+    {
+        f[i] = init;
+    }
+}
+
+void putFoodSeed (struct food *fp)
+{
+    int max_x = 0, max_y = 0;
+    char spoint[2] = {0};
+    getmaxyx(stdscr, max_y, max_x);
+    mvprintw(fp->y, fp->x, " ");
+    fp->x = rand() % (max_x - 1);
+    fp->y = rand() % (max_y - 2) + 1;
+    fp->put_time = time(NULL);
+    fp->point = '$';
+    fp->enable = 1;
+    spoint[0] = fp->point;
+    mvprintw(fp->y, fp->x, "%s", spoint);
+}
+
+void putFood(struct food f[], size_t number_seeds)
+{
+    for (size_t i = 0; i < number_seeds; i++)
+    {
+        putFoodSeed(&f[i]);
+    }
+}
+
+void refreshFood(struct food f[], int nfood)
+{
+    int max_x = 0, max_y = 0;
+    char spoint[2] = {0};
+    getmaxyx(stdscr, max_y, max_x);
+    for (size_t i = 0; i < nfood; i++)
+    {
+        if (f[i].put_time)
+        {
+            if (!f[i].enable || (time(NULL) - f[i].put_time) > FOOD_EXPIRE_SECONDS)
+            {
+                putFoodSeed(&f[i]);
+            }
+        }        
+    }    
 }
 
 void go(struct snake_t *head)
@@ -185,11 +245,37 @@ int checkDirection(snake_t *snake, int32_t key, int i)
     }
 }
 
+void addTail(struct snake_t *head)
+{
+    if (head == NULL || head->tsize > MAX_TAIL_SIZE)
+    {
+        mvprintw(0, 0, "Can't add tail.");
+        return;
+    }
+    head->tsize++;
+}
+
+_Bool haveEat(struct snake_t *head, struct food f[])
+{
+    for (size_t i = 0; i < MAX_FOOD_SIZE; i++)
+    {
+        if (f[i].enable && head->x == f[i].x && head->y == f[i].y)
+        {
+            f[i].enable = 0;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int main(int argc, char const *argv[])
 {
     snake_t *snake = (snake_t *) malloc(sizeof(snake_t));
+    food *sead = (food *) malloc(sizeof(food));
 
     initSnake(snake, START_TAIL_SIZE, 10, 10);
+    initFood(sead, MAX_FOOD_SIZE);
+    putFood(sead, SEED_NUMBER);
 
     initscr();
     keypad(stdscr, TRUE);
@@ -207,9 +293,15 @@ int main(int argc, char const *argv[])
         goTail(snake);
         timeout(100);
         changeDirection(snake, key_pressed);
+        refreshFood(sead, SEED_NUMBER);
+        if (haveEat(snake, sead))
+        {
+            addTail(snake);
+        }        
     }
     free(snake->tail);
     free(snake);
+    free(sead);
     endwin();
     return 0;
 }
