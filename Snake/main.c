@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define MIN_Y 2
+#define CONTROLS 3
 
 enum {LEFT=1, UP, RIGHT, DOWN, STOP_GAME=KEY_F(10)};
 enum {MAX_TAIL_SIZE=100, START_TAIL_SIZE=3, MAX_FOOD_SIZE=20, FOOD_EXPIRE_SECONDS=10};
@@ -23,7 +24,7 @@ typedef struct snake_t
     int direction;
     size_t tsize;
     struct tail_t *tail;
-    struct control_buttons controls;
+    struct control_buttons *controls;
 } snake_t;
 
 typedef struct tail_t
@@ -32,7 +33,9 @@ typedef struct tail_t
     int y;
 } tail_t;
 
-struct control_buttons default_controls = {KEY_DOWN, KEY_UP, KEY_LEFT, KEY_RIGHT};
+struct control_buttons default_controls[CONTROLS] = {{KEY_DOWN, KEY_UP, KEY_LEFT, KEY_RIGHT},
+                                                     {'S', 'W', 'A', 'D'},
+                                                     {'s', 'w', 'a', 'd'}};
 
 void initTail(struct tail_t t[], size_t size)
 {
@@ -120,55 +123,58 @@ void goTail(struct snake_t *head)
 
 void changeDirection(snake_t *snake, const int32_t key)
 {
-    if (key == snake->controls.down)
+    for (int i = 0; i < CONTROLS; i++)
     {
-        if (checkDirection(snake, key))
+        if (key == snake->controls[i].down)
         {
-            snake->direction = DOWN;
+            if (checkDirection(snake, key, i))
+            {
+                snake->direction = DOWN;
+            }
         }
-        
+        else if (key == snake->controls[i].up)
+        {
+            if (checkDirection(snake, key, i))
+            {
+                snake->direction = UP;
+            }
+        }
+        else if (key == snake->controls[i].right)
+        {
+            if (checkDirection(snake, key, i))
+            {
+                snake->direction = RIGHT;
+            }
+        }
+        else if (key == snake->controls[i].left)
+        {
+            if (checkDirection(snake, key, i))
+            {
+                snake->direction = LEFT;
+            }
+        }    
     }
-    else if (key == snake->controls.up)
-    {
-        if (checkDirection(snake, key))
-        {
-            snake->direction = UP;
-        }
-    }
-    else if (key == snake->controls.right)
-    {
-        if (checkDirection(snake, key))
-        {
-            snake->direction = RIGHT;
-        }
-    }
-    else if (key == snake->controls.left)
-    {
-        if (checkDirection(snake, key))
-        {
-            snake->direction = LEFT;
-        }
-    }    
 }
 
-int checkDirection(snake_t *snake, int32_t key)
+int checkDirection(snake_t *snake, int32_t key, int i)
 {
-    if (snake->direction == RIGHT && key == snake->controls.left)
+
+    if (snake->direction == RIGHT && key == snake->controls[i].left)
     {
         snake->direction = RIGHT;
         return 0;
     }
-    else if (snake->direction == UP && key == snake->controls.down)
+    else if (snake->direction == UP && key == snake->controls[i].down)
     {
         snake->direction = UP;
         return 0;
     }
-    else if (snake->direction == LEFT && key == snake->controls.right)
+    else if (snake->direction == LEFT && key == snake->controls[i].right)
     {
         snake->direction = LEFT;
         return 0;
     }
-    else if (snake->direction == DOWN && key == snake->controls.up)
+    else if (snake->direction == DOWN && key == snake->controls[i].up)
     {
         snake->direction = DOWN;
         return 0;
@@ -177,7 +183,6 @@ int checkDirection(snake_t *snake, int32_t key)
     {
         return 1;
     }
-    
 }
 
 int main(int argc, char const *argv[])
@@ -203,7 +208,7 @@ int main(int argc, char const *argv[])
         timeout(100);
         changeDirection(snake, key_pressed);
     }
-    //free(snake->tail);
+    free(snake->tail);
     free(snake);
     endwin();
     return 0;
