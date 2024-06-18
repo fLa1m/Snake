@@ -122,20 +122,62 @@ void changeDirection(snake_t *snake, const int32_t key)
 {
     if (key == snake->controls.down)
     {
-        snake->direction = DOWN;
+        if (checkDirection(snake, key))
+        {
+            snake->direction = DOWN;
+        }
+        
     }
     else if (key == snake->controls.up)
     {
-        snake->direction = UP;
+        if (checkDirection(snake, key))
+        {
+            snake->direction = UP;
+        }
     }
     else if (key == snake->controls.right)
     {
-        snake->direction = RIGHT;
+        if (checkDirection(snake, key))
+        {
+            snake->direction = RIGHT;
+        }
     }
     else if (key == snake->controls.left)
     {
-        snake->direction = LEFT;
+        if (checkDirection(snake, key))
+        {
+            snake->direction = LEFT;
+        }
     }    
+}
+
+int checkDirection(snake_t *snake, int32_t key)
+{
+    if (snake->direction == RIGHT && key == snake->controls.left)
+    {
+        snake->direction = RIGHT;
+        return 0;
+    }
+    else if (snake->direction == UP && key == snake->controls.down)
+    {
+        snake->direction = UP;
+        return 0;
+    }
+    else if (snake->direction == LEFT && key == snake->controls.right)
+    {
+        snake->direction = LEFT;
+        return 0;
+    }
+    else if (snake->direction == DOWN && key == snake->controls.up)
+    {
+        snake->direction = DOWN;
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+    
 }
 
 int main(int argc, char const *argv[])
