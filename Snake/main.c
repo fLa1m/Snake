@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
 
 #define MIN_Y 2
 #define CONTROLS 3
+
+const double DELAY = 0.1;
 
 enum {LEFT=1, UP, RIGHT, DOWN, STOP_GAME=KEY_F(10)};
 enum {MAX_TAIL_SIZE=100, START_TAIL_SIZE=3, MAX_FOOD_SIZE=20, FOOD_EXPIRE_SECONDS=10, SEED_NUMBER=5};
@@ -268,15 +271,7 @@ _Bool haveEat(struct snake_t *head, struct food f[])
     return 0;
 }
 
-int main(int argc, char const *argv[])
-{
-    snake_t *snake = (snake_t *) malloc(sizeof(snake_t));
-    food *sead = (food *) malloc(sizeof(food));
-
-    initSnake(snake, START_TAIL_SIZE, 10, 10);
-    initFood(sead, MAX_FOOD_SIZE);
-    putFood(sead, SEED_NUMBER);
-
+void initScreen(){
     initscr();
     keypad(stdscr, TRUE);
     raw();
@@ -284,8 +279,22 @@ int main(int argc, char const *argv[])
     curs_set(FALSE);
     mvprintw(0, 0, " Use arrows for control. Press 'F10' for EXIT.");
     timeout(0);
+}
+
+int main(int argc, char const *argv[])
+{
+    int delay = 200000;
+    int level = 1;
+
+    snake_t *snake = (snake_t *) malloc(sizeof(snake_t));
+    food *seed = (food *) malloc(sizeof(food));
+
+    initFood(seed, MAX_FOOD_SIZE);
+    initSnake(snake, START_TAIL_SIZE, 10, 10);
+    initScreen();
 
     int key_pressed = 0;
+    putFood(seed, SEED_NUMBER);
     while (key_pressed != STOP_GAME)
     {
         key_pressed = getch();
@@ -293,15 +302,15 @@ int main(int argc, char const *argv[])
         goTail(snake);
         timeout(100);
         changeDirection(snake, key_pressed);
-        refreshFood(sead, SEED_NUMBER);
-        if (haveEat(snake, sead))
+        refreshFood(seed, SEED_NUMBER);
+        if (haveEat(snake, seed))
         {
             addTail(snake);
-        }        
+        }              
     }
     free(snake->tail);
     free(snake);
-    free(sead);
+    free(seed);
     endwin();
     return 0;
 }
