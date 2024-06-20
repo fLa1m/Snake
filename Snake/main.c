@@ -7,9 +7,7 @@
 #define MIN_Y 2
 #define CONTROLS 3
 
-const double DELAY = 0.1;
-
-enum {LEFT=1, UP, RIGHT, DOWN, STOP_GAME=KEY_F(10)};
+enum {LEFT=1, UP, RIGHT, DOWN, STOP_GAME=KEY_F(10), PAUSE_GAME = 'p'};
 enum {MAX_TAIL_SIZE=100, START_TAIL_SIZE=3, MAX_FOOD_SIZE=20, FOOD_EXPIRE_SECONDS=10, SEED_NUMBER=5};
 
 typedef struct control_buttons
@@ -71,7 +69,7 @@ void initSnake(snake_t *head, size_t size, int x, int y)
     initTail(tail, MAX_TAIL_SIZE);
     initHead(head, x, y);
     head->tail = tail;
-    head->tsize = size + 1;
+    head->tsize = size;
     head->controls = default_controls;
 }
 
@@ -252,7 +250,7 @@ void addTail(struct snake_t *head)
 {
     if (head == NULL || head->tsize > MAX_TAIL_SIZE)
     {
-        mvprintw(0, 0, "Can't add tail.");
+        mvprintw(1, 0, "Can't add tail.");
         return;
     }
     head->tsize++;
@@ -281,10 +279,38 @@ void initScreen(){
     timeout(0);
 }
 
+void printLevel(struct snake_t *head) {
+    int max_x = 0, max_y = 0;
+    getmaxyx(stdscr, max_y, max_x);
+    int level = head->tsize - START_TAIL_SIZE;
+    mvprintw(0, max_x - 10, "Level: %d", level);
+}
+
+void printExit(struct snake_t *head)
+{
+    int max_x = 0, max_y = 0;
+    getmaxyx(stdscr, max_y, max_x);
+    int level = head->tsize - START_TAIL_SIZE;
+    clear();
+    mvprintw(max_y/2, max_x/2 - 5, "Level: %d", level);
+    refresh();
+    getchar();
+}
+
+void pause(void)
+{
+    int max_x = 0, max_y = 0;
+    getmaxyx(stdscr, max_y, max_x);
+    mvprintw(max_y/2, max_x/2 - 5, "Press P to continue");
+    while (getch() != PAUSE_GAME)
+    {
+    }
+    mvprintw(max_y/2, max_x/2 - 5, "                   ");
+}
+
 int main(int argc, char const *argv[])
 {
-    int delay = 200000;
-    int level = 1;
+    double delay = 0.1;
 
     snake_t *snake = (snake_t *) malloc(sizeof(snake_t));
     food *seed = (food *) malloc(sizeof(food));
@@ -297,17 +323,29 @@ int main(int argc, char const *argv[])
     putFood(seed, SEED_NUMBER);
     while (key_pressed != STOP_GAME)
     {
+        clock_t begin = clock();
         key_pressed = getch();
+        if (key_pressed == PAUSE_GAME)
+        {
+            pause();
+        }
+        
         go(snake);
         goTail(snake);
-        timeout(100);
+        //timeout(delay);
         changeDirection(snake, key_pressed);
         refreshFood(seed, SEED_NUMBER);
+        printLevel(snake);
         if (haveEat(snake, seed))
         {
             addTail(snake);
-        }              
+            delay -= 0.009;
+        }
+        while (((double)(clock() - begin) / CLOCKS_PER_SEC) < delay)
+        {
+        }         
     }
+    printExit(snake);
     free(snake->tail);
     free(snake);
     free(seed);
