@@ -124,6 +124,34 @@ void refreshFood(struct food f[], int nfood)
     }    
 }
 
+void repairSeed(struct food f[], size_t nfood, struct snake_t *head)
+{
+    // Если хвост совпадает с зерном
+    for (size_t i = 0; i < head->tsize; i++)
+    {
+        for (size_t j = 0; j < nfood; j++)
+        {
+            if (f[j].x == head->tail[i].x && f[j].y == head->tail[i].y && f[i].enable)
+            {
+                mvprintw(1, 0, "Repair tail seed %zu", j);
+                putFoodSeed(&f[j]);
+            }
+        }
+    }
+    // Если два зерна на одной точке
+    for (size_t i = 0; i < nfood; i++)
+    {
+        for (size_t j = 0; j < nfood; j++)
+        {
+            if (i != j && f[i].enable && f[j].enable && f[j].x == f[i].x && f[j].y == f[i].y && f[i].enable)
+            {
+                mvprintw(1, 0, "Repair same seed %zu", j);
+                putFoodSeed(&f[j]);
+            }
+        }
+    }
+}
+
 void go(struct snake_t *head)
 {
     char ch = '@';
@@ -269,6 +297,18 @@ _Bool haveEat(struct snake_t *head, struct food f[])
     return 0;
 }
 
+_Bool isCrush(snake_t *snake)
+{
+    for (size_t i = 1; i < snake->tsize; i++)
+    {
+        if (snake->x == snake->tail[i].x && snake->y == snake->tail[i].y)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void initScreen(){
     initscr();
     keypad(stdscr, TRUE);
@@ -339,11 +379,16 @@ int main(int argc, char const *argv[])
         if (haveEat(snake, seed))
         {
             addTail(snake);
-            delay -= 0.009;
+            delay -= 0.001;
         }
         while (((double)(clock() - begin) / CLOCKS_PER_SEC) < delay)
         {
-        }         
+        }
+        if (isCrush(snake))
+        {
+            break;
+        }
+        repairSeed(seed, SEED_NUMBER, snake);
     }
     printExit(snake);
     free(snake->tail);
