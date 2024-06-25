@@ -27,6 +27,8 @@ typedef struct snake_t
     size_t tsize;
     struct tail_t *tail;
     struct control_buttons *controls;
+    int color;
+    //int ai;
 } snake_t;
 
 typedef struct tail_t
@@ -77,6 +79,26 @@ void initSnake(snake_t *head[], size_t size, int x, int y, int i)
     head[i]->tail = tail;
     head[i]->tsize = size;
     //head[i]->controls = default_controls;
+    head[i]->color = i + 1;
+}
+
+void setColor(int objectType)
+{
+    attroff(COLOR_PAIR(1));
+    attroff(COLOR_PAIR(2));
+    attroff(COLOR_PAIR(3));
+    switch (objectType)
+    {
+        case 1:
+            attron(COLOR_PAIR(1));
+            break;
+        case 2:
+            attron(COLOR_PAIR(2));
+            break;
+        case 3:
+            attron(COLOR_PAIR(3));
+            break;
+    }
 }
 
 void initFood(struct food f[], size_t size)
@@ -161,6 +183,7 @@ void repairSeed(struct food f[], size_t nfood, struct snake_t *head)
 void go(struct snake_t *head)
 {
     char ch = '@';
+    setColor(head->color);
     int max_x = 0, max_y = 0;
     getmaxyx(stdscr, max_y, max_x);
     mvprintw(head->y, head->x, " ");
@@ -203,6 +226,7 @@ void go(struct snake_t *head)
 void goTail(struct snake_t *head)
 {
     char ch = '*';
+    setColor(head->color);
     mvprintw(head->tail[head->tsize - 1].y, head->tail[head->tsize - 1].x, " ");
     for (size_t i = head->tsize - 1; i > 0; i--)
     {
@@ -400,6 +424,7 @@ int main(int argc, char const *argv[])
     double delay = 0.1;
     int isFinish = 0;
 
+
     snake_t *snakes[PLAYERS];
     for (int i = 0; i < PLAYERS; i++)
     {
@@ -416,6 +441,10 @@ int main(int argc, char const *argv[])
 
     int key_pressed = 0;
     putFood(seed, SEED_NUMBER);
+    start_color();
+    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(2, COLOR_BLUE, COLOR_BLACK);
+    init_pair(3, COLOR_GREEN, COLOR_BLACK);
     while (key_pressed != STOP_GAME && !isFinish)
     {
         clock_t begin = clock();
